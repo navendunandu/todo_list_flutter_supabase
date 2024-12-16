@@ -11,9 +11,28 @@ class ToDoScreen extends StatefulWidget {
 class _ToDoScreenState extends State<ToDoScreen> {
   final supabase = Supabase.instance.client;
 
+  @override
+  void initState() {
+    super.initState();
+    fetchNotes();
+  }
+
+  List<Map<String, dynamic>> _tasks = [];
+
+  Future<void> fetchNotes() async {
+    try {
+      final response = await supabase.from('tbl_todo').select();
+
+      setState(() {
+        _tasks = response;
+      });
+    } catch (e) {
+      print('Exception during fetch: $e');
+    }
+  }
+
   Future<void> insertNote() async {
     try {
-      // Inserting the note into Supabase
       await supabase.from('tbl_todo').insert({
         'note': _noteController.text,
       });
@@ -55,20 +74,21 @@ class _ToDoScreenState extends State<ToDoScreen> {
               ],
             ),
           ),
-          ListView(
-            shrinkWrap: true,
-            children: [
-              ListTile(
-                title: Text("Task 1"),
-                trailing: Icon(Icons.check),
-              ),
-              ListTile(
-                title: Text("Task 2"),
-                trailing: Icon(Icons.check),
-              ),
-              // Add more ListTiles as needed...
-            ],
-          )
+          Expanded(
+            child: _tasks.isEmpty
+                ? const Center(child: Text("No tasks yet."))
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _tasks.length,
+                    itemBuilder: (context, index) {
+                      final task = _tasks[index];
+                      return ListTile(
+                        title: Text(task['note']),
+                        trailing: const Icon(Icons.check),
+                      );
+                    },
+                  ),
+          ),
         ],
       )),
     );
