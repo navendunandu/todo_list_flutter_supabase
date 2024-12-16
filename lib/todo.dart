@@ -36,8 +36,18 @@ class _ToDoScreenState extends State<ToDoScreen> {
       await supabase.from('tbl_todo').insert({
         'note': _noteController.text,
       });
+      fetchNotes();
     } catch (e) {
       print('Exception during insert: $e');
+    }
+  }
+
+  Future<void> deleteNotes(int id) async {
+    try {
+      await supabase.from('tbl_todo').delete().eq('id', id);
+      fetchNotes();
+    } catch (e) {
+      print("Error Deleting: $e");
     }
   }
 
@@ -84,7 +94,12 @@ class _ToDoScreenState extends State<ToDoScreen> {
                       final task = _tasks[index];
                       return ListTile(
                         title: Text(task['note']),
-                        trailing: const Icon(Icons.check),
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () {
+                            deleteNotes(task['id']);
+                          },
+                        ),
                       );
                     },
                   ),
