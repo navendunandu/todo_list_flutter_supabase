@@ -37,21 +37,37 @@ class _ToDoScreenState extends State<ToDoScreen> {
         'note': _noteController.text,
       });
       fetchNotes();
+      _noteController.clear();
     } catch (e) {
       print('Exception during insert: $e');
     }
   }
 
-  Future<void> deleteNotes(int id) async {
+  Future<void> deleteNotes(int noteId) async {
     try {
-      await supabase.from('tbl_todo').delete().eq('id', id);
+      await supabase.from('tbl_todo').delete().eq('id', noteId);
       fetchNotes();
     } catch (e) {
       print("Error Deleting: $e");
     }
   }
 
+  Future<void> updateNote() async {
+    try {
+      await supabase
+          .from('tbl_todo')
+          .update({'note': _noteController.text}).eq('id', _editId);
+      fetchNotes();
+      _noteController.clear();
+      _editId = 0;
+    } catch (e) {
+      print('Exception during update: $e');
+    }
+  }
+
   final TextEditingController _noteController = TextEditingController();
+
+  int _editId = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +94,11 @@ class _ToDoScreenState extends State<ToDoScreen> {
                 ),
                 ElevatedButton(
                     onPressed: () {
-                      insertNote();
+                      if (_editId != 0) {
+                        updateNote();
+                      } else {
+                        insertNote();
+                      }
                     },
                     child: Text("Add"))
               ],
@@ -94,11 +114,27 @@ class _ToDoScreenState extends State<ToDoScreen> {
                       final task = _tasks[index];
                       return ListTile(
                         title: Text(task['note']),
-                        trailing: IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () {
-                            deleteNotes(task['id']);
-                          },
+                        trailing: SizedBox(
+                          width: 100,
+                          child: Row(
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.edit),
+                                onPressed: () {
+                                  setState(() {
+                                    _editId = task['id'];
+                                    _noteController.text = task['note'];
+                                  });
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete),
+                                onPressed: () {
+                                  deleteNotes(task['id']);
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
